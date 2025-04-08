@@ -1,5 +1,6 @@
 "use client";
 import { interviewer } from "@/constants";
+import { createFeedback } from "@/lib/actions/general.action";
 import { cn } from "@/lib/utils";
 import { vapi } from "@/lib/vapi.sdk";
 import Image from "next/image";
@@ -68,10 +69,11 @@ const Agent = ({
     console.log("Generate feedback here.");
 
     // TODO: Create a server action that generates feedback
-    const { success, id } = {
-      success: true,
-      id: "feedback-id",
-    };
+    const { success, feedbackId: id } = await createFeedback({
+      interviewId: interviewId!,
+      userId: userId!,
+      transcript: messages,
+    });
     if (success && id) {
       router.push(`/interview/${interviewId}/feedback`);
     } else {
@@ -81,6 +83,7 @@ const Agent = ({
   };
 
   useEffect(() => {
+    console.log("Call status changed to:", callStatus);
     if (callStatus === CallStatus.FINISHED) {
       if (type === "generate") {
         router.push("/");
@@ -117,7 +120,6 @@ const Agent = ({
   };
   const handleDisconnect = async () => {
     setCallStatus(CallStatus.FINISHED);
-
     vapi.stop();
   };
 
@@ -175,7 +177,7 @@ const Agent = ({
 
       <div className="w-full flex justify-center">
         {callStatus !== "ACTIVE" ? (
-          <button className="relative btn-call" onClick={handleCall}>
+          <button className="relative btn-call" onClick={() => handleCall()}>
             <span
               className={cn(
                 "absolute animate-ping rounded-full opacity-75",
@@ -185,7 +187,7 @@ const Agent = ({
             <span>{isCallInactiveOrFinished ? "Call" : ". . ."}</span>
           </button>
         ) : (
-          <button onClick={handleDisconnect} className="btn-disconnect">
+          <button onClick={() => handleDisconnect()} className="btn-disconnect">
             End
           </button>
         )}
